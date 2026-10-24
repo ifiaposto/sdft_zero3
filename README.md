@@ -8,7 +8,7 @@ This repository extends [Hugging Face TRL](https://github.com/huggingface/trl)�
 - **Quick launchers for sdft with LoRA EMA teacher:** launch 9B LoRA training with EMA updates restricted to adapter parameters for efficiency.
 
 > [!NOTE]
-> This project extends TRL’s SDFTTrainer and, to our knowledge, provides the first experimental evaluation of LoRA adapter EMA teachers for SDFT under DeepSpeed ZeRO-3. The default launcher selects **full-vocabulary forward KL** (`DISTILLATION_MODE=full_logits`, `DISTILLATION_ALPHA=0.0`). For methodology, see [Self-Distillation Enables Continual Learning](https://arxiv.org/abs/2601.19897).
+> This project extends TRL’s SDFTTrainer and, to our knowledge, provides the first experimental evaluation of LoRA adapter EMA teachers for SDFT under DeepSpeed ZeRO-3.
 
 ## :hammer_and_wrench: Installation
 
@@ -160,12 +160,12 @@ BS=8 GA=1 SAVE_STEPS=100 ./run_sdft.sh
 
 ## :bar_chart: ToolAlpaca evaluation results
 
-Experiments below used **4 NVIDIA L40S GPUs (48 GB each)** and **DeepSpeed ZeRO-3** with bf16. A working DeepSpeed ZeRO-3 configuration for NVIDIA L40S GPUs (48 GB) is provided in configs/deepspeed/zero3.json. Both model families were evaluated on **68 ToolAlpaca test examples**, with greedy generation (`temperature=0`, `max_new_tokens=1024`). Each cell links to the recorded metric JSON and complete generated responses.
+We evaluate **Qwen3.5-4B with full fine-tuning** and **Qwen3.5-9B with LoRA** on **68 ToolAlpaca test examples**, using greedy generation (`temperature=0`, `max_new_tokens=1024`). All experiments use **4 NVIDIA L40S GPUs (48 GB each)** with **bf16** and **DeepSpeed ZeRO-3**. A working configuration is provided in [`configs/deepspeed/zero3.json`](configs/deepspeed/zero3.json). Each table cell links to the recorded metrics and complete generated responses.
 
 > [!IMPORTANT]
-> These are archived single-run checkpoint results, not multi-seed averages or results guaranteed by the current default configuration.
+> These are single-run checkpoint results, not multi-seed averages or results guaranteed by the current default configuration.
 
-### Qwen3.5-4B — Full Finetuning
+### Qwen3.5-4B — FFT
 
 **Learning rate:** `1e-5` · **Method:** full fine-tuning · **Teacher comparison:** base vs EMA. 
 
