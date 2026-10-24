@@ -164,7 +164,10 @@ Experiments below used **4 NVIDIA L40S GPUs (48 GB each)** and **DeepSpeed ZeRO-
 
 > [!IMPORTANT]
 > These are archived single-run checkpoint results, not multi-seed averages or results guaranteed by the current default configuration.
-**Learning rate:** `1e-5` · **Method:** full fine-tuning · **Teacher comparison:** base vs EMA. The best archived EMA checkpoint is **48/68 (70.6%)** at step 1011; the best base checkpoints are **38/68 (55.9%)** at steps 300 and 900.
+
+### Qwen3.5-4B — Full Finetuning
+
+**Learning rate:** `1e-5` · **Method:** full fine-tuning · **Teacher comparison:** base vs EMA. 
 
 | Checkpoint | Base teacher | EMA teacher |
 |:--|--:|--:|
@@ -183,7 +186,7 @@ Experiments below used **4 NVIDIA L40S GPUs (48 GB each)** and **DeepSpeed ZeRO-
 
 ### Qwen3.5-9B — LoRA
 
-**Learning rate:** `1e-4` · **LoRA:** rank `64`, alpha `128` · **Teacher comparison:** base vs EMA. The best archived EMA checkpoints are **46/68 (67.6%)** at steps 900 and 1000; the best base checkpoint is **45/68 (66.2%)** at step 1000.
+**Learning rate:** `1e-4` · **LoRA:** rank `64`, alpha `128` · **Teacher comparison:** base vs EMA.
 
 | Checkpoint | Base teacher | EMA teacher |
 |:--|--:|--:|
@@ -202,8 +205,7 @@ Experiments below used **4 NVIDIA L40S GPUs (48 GB each)** and **DeepSpeed ZeRO-
 
 ### Inspecting model responses
 
-Individual predictions, gold tool calls, and checkpoint-level metrics are under **[`chkpt_eval_results/`](chkpt_eval_results/)**. The two tables above link every checkpoint directly to its corresponding `*-results.json` and `*-responses.json` files. The archived results directory is separate from the default output location for **new** evaluations (`checkpoint_evals/`).
-
+Individual predictions, gold tool calls, and checkpoint-level metrics are under **[`chkpt_eval_results/`](chkpt_eval_results/)**. The two tables above link every checkpoint directly to its corresponding `*-results.json` and `*-responses.json` files. 
 ## :bulb: Implementation notes
 
 - **TRL remains the owner of the SDFT algorithm.** The project-specific extension targets ZeRO-3-safe LoRA EMA handling, exact teacher-state persistence, and checkpoint/evaluation tooling.
