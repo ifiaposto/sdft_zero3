@@ -5,7 +5,7 @@ This repository extends [Hugging Face TRL](https://github.com/huggingface/trl)�
 - **ZeRO-3-safe LoRA EMA teacher:** maintain and update the teacher adapter safely under parameter sharding.
 - **EMA checkpointing and exact resume:** save and restore EMA state alongside training checkpoints.
 - **Robust ZeRO-3 checkpointing:** save and restore distributed model and optimizer state.
-- **Quick launchers for sdft with LoRA EMA teacher:** launch 9B LoRA training with EMA updates restricted to adapter parameters for efficiency.
+- **Quick launchers for SDFT with LoRA EMA teacher:** launch 9B LoRA training with EMA updates restricted to adapter parameters for efficiency.
 
 > [!NOTE]
 > This project extends TRL’s SDFTTrainer and, to our knowledge, provides the first experimental evaluation of LoRA adapter EMA teachers for SDFT under DeepSpeed ZeRO-3.
@@ -18,8 +18,8 @@ This repository extends [Hugging Face TRL](https://github.com/huggingface/trl)�
 conda create -n sdft python=3.11 -y
 conda activate sdft
 
-# Install the full repository's declared Python dependencies
-python -m pip install -e .
+# Install the dependencies listed in requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ## :rocket: Quickstart
@@ -35,7 +35,7 @@ chmod +x run_sdft.sh
 export HF_TOKEN="hf_your_actual_token"
 ```
 
-The environment helper is cluster-oriented and contains cluster-specific default Conda and scratch paths. **Override `CONDA_ROOT`, `CONDA_ENV`, and `SCRATCH_ROOT` for your cluster**, or skip the helper if the environment is already configured. Run `run_sdft.sh` from the project root, where `configs/deepspeed/zero3.json` and the Python entry points are available.
+The environment helper is cluster-oriented and contains cluster-specific default Conda and scratch paths. Override `CONDA_ROOT`, `CONDA_ENV`, and `SCRATCH_ROOT` for your cluster, or skip the helper if the environment is already configured. Run `run_sdft.sh` from the project root, where `configs/deepspeed/zero3.json` and the Python entry points are available.
 
 ### Training configurations
 
@@ -160,12 +160,12 @@ BS=8 GA=1 SAVE_STEPS=100 ./run_sdft.sh
 
 ## :bar_chart: ToolAlpaca evaluation results
 
-We evaluate **Qwen3.5-4B with full fine-tuning** and **Qwen3.5-9B with LoRA** on **68 ToolAlpaca test examples**, using greedy generation (`temperature=0`, `max_new_tokens=1024`). All experiments use **4 NVIDIA L40S GPUs (48 GB each)** with **bf16** and **DeepSpeed ZeRO-3**. A working configuration is provided in [`configs/deepspeed/zero3.json`](configs/deepspeed/zero3.json). Each table cell links to the recorded metrics and complete generated responses.
+I tested the repo on ToolAlpaca using Qwen3.5-4B with full fine-tuning and Qwen3.5-9B with LoRA. I trained for one epoch. All experiments use 4 NVIDIA L40S GPUs (48 GB each) with bf16 and DeepSpeed ZeRO-3. A working configuration is provided in [`configs/deepspeed/zero3.json`](configs/deepspeed/zero3.json). 
 
 > [!IMPORTANT]
 > These are single-run checkpoint results, not multi-seed averages or results guaranteed by the current default configuration.
 
-### Qwen3.5-4B — FFT
+### Qwen3.5-4B — SDFT with FFT
 
 **Learning rate:** `1e-5` · **Method:** full fine-tuning · **Teacher comparison:** base vs EMA. 
 
@@ -184,7 +184,7 @@ We evaluate **Qwen3.5-4B with full fine-tuning** and **Qwen3.5-9B with LoRA** on
 | 1000 | 48.5% ([results](chkpt_eval_results/sdft-qwen3.5-4b-base-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1000-results.json) · [responses](chkpt_eval_results/sdft-qwen3.5-4b-base-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1000-responses.json)) | 64.7% ([results](chkpt_eval_results/sdft-qwen3.5-4b-ema-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1000-results.json) · [responses](chkpt_eval_results/sdft-qwen3.5-4b-ema-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1000-responses.json)) |
 | 1011 | 48.5% ([results](chkpt_eval_results/sdft-qwen3.5-4b-base-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1011-results.json) · [responses](chkpt_eval_results/sdft-qwen3.5-4b-base-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1011-responses.json)) | **70.6%** ([results](chkpt_eval_results/sdft-qwen3.5-4b-ema-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1011-results.json) · [responses](chkpt_eval_results/sdft-qwen3.5-4b-ema-zero3-4gpu-1--LR-1e-5-epoch/checkpoint-1011-responses.json)) |
 
-### Qwen3.5-9B — LoRA
+### Qwen3.5-9B — SDFT with LoRA
 
 **Learning rate:** `1e-4` · **LoRA:** rank `64`, alpha `128` · **Teacher comparison:** base vs EMA.
 
@@ -208,10 +208,9 @@ We evaluate **Qwen3.5-4B with full fine-tuning** and **Qwen3.5-9B with LoRA** on
 Individual predictions, gold tool calls, and checkpoint-level metrics are under **[`chkpt_eval_results/`](chkpt_eval_results/)**. The two tables above link every checkpoint directly to its corresponding `*-results.json` and `*-responses.json` files. 
 ## :bulb: Implementation notes
 
-- **TRL remains the owner of the SDFT algorithm.** The project-specific extension targets ZeRO-3-safe LoRA EMA handling, exact teacher-state persistence, and checkpoint/evaluation tooling.
-- **Forward KL is explicitly configured.** Setting `full_logits` and `DISTILLATION_ALPHA=0.0` requests the full-vocabulary `KL(teacher || student)` objective rather than silently inheriting a different TRL default.
-- **Checkpoint compatibility matters.** Resume with the same model, LoRA settings, distributed configuration, and saved teacher state.
-- **Generation quality and exact tool-call accuracy differ.** A model may predict valid actions while generating unwanted extra text. Inspect `*-responses.json` alongside accuracy numbers, especially for EMA runs.
+-The repotargets ZeRO-3-safe LoRA EMA handling, exact teacher-state persistence, and checkpoint/evaluation tooling and is based on TRL's SDFT implementation.
+- I set `full_logits` and `DISTILLATION_ALPHA=0.0` which trains with the full-vocabulary `KL(teacher || student)`, following the paper, rather than the TRL default.
+- I have slightly changed the paper’s demonstration prompt to address repetitive tool calls and echoed template text observed in student outputs during LoRA training with an EMA teacher.
 
 ## :books: References
 
